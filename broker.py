@@ -16,13 +16,12 @@ class MirAIeBroker:
     __username: str
     __password: str
     __topics: list[str] = []
-    __getTokenFunc: callable
     __callbacks: dict[str, list[callable]] = {}
 
-    def __init__(self, username: str, password: str, getTokenFunc):
+
+    def init_broker(self, username: str, password: str):
         self.__username = username
         self.__password = password
-        self.__getTokenFunc = getTokenFunc
         self.__initMqttClient()
 
     def setTopics(self, topics: list[str]):
@@ -35,10 +34,12 @@ class MirAIeBroker:
         self.__callbacks.pop(topic, None)
 
     def connect(self):
-        self.__initMqttClient()
+        self.__client.connect(host=self.__host, port=self.__port)
+        self.__client.loop_start()
     
     def reconnect(self, password: str):
         self.__password = password
+        self.__client.username_pw_set(username=self.__username, password=self.__password)
         self.connect()
 
     
@@ -74,21 +75,32 @@ class MirAIeBroker:
         return str(value)
 
     def __initMqttClient(self):
-        self.__client = paho.Client(client_id=self.__generateClientId(), clean_session=False)
+        self.__client = paho.Client(client_id=self.__generateClientId(), transport="tcp", protocol=paho.MQTTv31, clean_session=False)
         self.__client.username_pw_set(
             username=self.__username, password=self.__password
         )
         self.__client.on_connect = self.__onMqttConnected
         self.__client.on_message = self.__onMqttMessageReceived
         self.__client.on_disconnect = self.__onMqttDisconnected
+        self.__client.on_log = self.__onMqttLog
 
-        if self.__useSsl:
-            context = ssl.create_default_context(cafile=certifi.where())
-            self.__client.tls_set_context(context)
-            self.__client.tls_insecure_set(True)
 
-        self.__client.connect(host=self.__host, port=self.__port)
-        self.__client.loop_start()
+        # if self.__useSsl:
+        #     context = ssl.create_default_context(cafile=certifi.where())
+        #     self.__client.tls_set_context(context)
+        #     self.__client.tls_insecure_set(True)
+
+        self.__client.tls_set(certfile=None,
+               keyfile=None,
+               cert_reqs=ssl.CERT_REQUIRED)
+
+    def __onMqttLog(self, client,userdata,level,buff):
+        print("==========")
+        print("MQTT LOG:", buff)
+        print("level:", level)
+        print("userData", userdata)
+        print("==========")
+
 
     def __onMqttConnected(self, client: paho.Client, userData, flags, rc):
         for topic in self.__topics:
@@ -101,13 +113,15 @@ class MirAIeBroker:
         callbackFunc(parsed)
 
     def __onMqttDisconnected(self, client: paho.Client, userData, rc):
-        def updateAccessToken(accessToken: str):
-            self.__password = accessToken
-            self.__client.username_pw_set(username=self.__username, password=self.__password)
-            self.__client.reconnect()
+        # def updateAccessToken(accessToken: str):
+        #     self.__password = accessToken
+        #     self.__client.username_pw_set(username=self.__username, password=self.__password)
+        #     self.__client.reconnect()
 
-        if rc != 0:
-            asyncio.create_task(self.__getTokenFunc(updateAccessToken))
+        #if rc != 0:
+            # loop = asyncio.new_event_loop()
+            # loop.create_task(self.__getTokenFunc())
+        print("mqtt disconnected")
             
     def __buildPowerMessage(self, mode: PowerMode):
         message = self.__buildBaseMessage()

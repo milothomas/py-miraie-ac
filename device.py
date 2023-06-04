@@ -1,7 +1,8 @@
 from typing import Callable
 from broker import MirAIeBroker
 from deviceStatus import DeviceStatus
-from enums import FanMode, HVACMode, PowerMode, PresetMode, SwingMode
+from enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
+from utils import toFloat
 
 
 class Device:
@@ -51,13 +52,38 @@ class Device:
         for callback in self.__callbacks:
             callback()
 
-    def statusCallbackHandler(self, status: DeviceStatus):
-        self.status = status
+    def statusCallbackHandler(self, status: dict):
+        self.status = self.__parseStatusResponse(status)
         self.__publishState()
 
-    def connectionCallbackHandler(self, isOnline: bool):
-        self.status.isOnline = isOnline
-        self.__publishState()
+    def __parseStatusResponse(self, json:dict) -> DeviceStatus:
+        is_online = self.status.isOnline
+        if "onlineStatus" in json:
+            is_online = json["onlineStatus"] == "true"
+
+        device_status = DeviceStatus(
+            isOnline=is_online,
+            temperature=toFloat(json["actmp"]),
+            roomTemp=toFloat(json["rmtmp"]),
+            powerMode=PowerMode(json["ps"]),
+            fanMode=FanMode(json["acfs"]),
+            swingMode=SwingMode(json["acvs"]),
+            displayState=DisplayState(json["acdc"]),
+            hvacMode=HVACMode(json["acmd"]),
+            presetMode=PresetMode.BOOST
+            if json["acpm"] == "on"
+            else PresetMode.ECO
+            if json["acem"] == "on"
+            else PresetMode.NONE,
+        )
+
+        return device_status
+
+    # def connectionCallbackHandler(self, isOnline: bool):
+    def connectionCallbackHandler(self, status: dict):
+        if("onlineStatus" in status):
+            self.status.isOnline = status["onlineStatus"] == "true"
+            self.__publishState()
 
     def setTemperature(self, temp: float):
         self.__broker.setTemperature(self.controlTopic, temp)

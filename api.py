@@ -16,6 +16,7 @@ from enums import (
 )
 from home import Home
 from user import User
+from utils import toFloat
 
 
 class MirAIeAPI:
@@ -42,16 +43,14 @@ class MirAIeAPI:
 
     async def init(self):
         self.__user = await self.__login()
-        self.__broker = MirAIeBroker(
-            self.__user.userId, self.__user.accessToken, self.getNewToken
-        )
+        self.__broker = MirAIeBroker()
 
         self.__home = await self.__getHomeDetails()
-
         self.__broker.setTopics(self.__topics)
+        self.__broker.init_broker(self.__home.id, self.__user.accessToken)
         self.__broker.connect()
 
-        self.__showHomeDetails()
+        return self.__home
 
     async def getNewToken(self):
         self.__user = await self.__login()
@@ -62,11 +61,6 @@ class MirAIeAPI:
         if self.__home is not None:
             return self.__home.devices.values()
         return list[Device]
-
-    def __showHomeDetails(self):
-        print("id:", self.__home.id)
-        for device_id, device in self.__home.devices.items():
-            print("Name:", device.friendlyName)
 
     #################################################################################################################
     #                                                                                                               #
@@ -174,19 +168,10 @@ class MirAIeAPI:
 
     def __buildHttpHeaders(self):
         return {
-            "Authorization": f"Bearer {self.__user.accessToken}",
-            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.__user.accessToken}"
+            #,"Content-Type": "application/json",
         }
 
     def __getScope(self):
         rnd = math.floor(random.random() * 1000000000)
         return f"an{str(rnd)}"
-
-
-def toFloat(value: str) -> float:
-    if value is None:
-        return -1.0
-    try:
-        return float(value)
-    except:
-        return -1.0
