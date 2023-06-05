@@ -1,17 +1,21 @@
+"""Represents a user"""
+
 class User:
-    accessToken: str
-    expiresIn: int
-    refreshToken: str
-    userId: str
+    """The User class"""
+
+    access_token: str
+    expires_in: int
+    refresh_token: str
+    user_id: str
 
     def __init__(
         self,
-        accessToken: str,
-        expiresIn: int,
-        refreshToken: str,
-        userId: str,
+        access_token: str,
+        expires_in: int,
+        refresh_token: str,
+        user_id: str,
     ):
-        self.accessToken = accessToken
-        self.expiresIn = expiresIn
-        self.refreshToken = refreshToken
-        self.userId = userId
+        self.access_token = access_token
+        self.expires_in = expires_in
+        self.refresh_token = refresh_token
+        self.user_id = user_id

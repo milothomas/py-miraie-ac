@@ -1,3 +1,5 @@
+"""The MirAIe API module"""
+
 import math
 import random
 import aiohttp
@@ -14,150 +16,146 @@ from enums import (
     PresetMode,
     SwingMode,
 )
+from exceptions import AuthException
 from home import Home
 from user import User
-from utils import toFloat
+from utils import to_float
 
 
 class MirAIeAPI:
-    __authType: str
-    __loginId: str
+    """The MirAIe API class"""
+    __auth_type: str
+    __login_id: str
     __password: str
-    __httpSession: aiohttp.ClientSession
+    __http_session: aiohttp.ClientSession
     __user: User
     __home: Home
     __topics: list[str] = []
     __broker: MirAIeBroker
 
-    def __init__(self, authType: AuthType, loginId: str, password: str):
-        self.__authType = str(authType.value)
-        self.__loginId = loginId
+    def __init__(self, auth_type: AuthType, login_id: str, password: str):
+        self.__auth_type = str(auth_type.value)
+        self.__login_id = login_id
         self.__password = password
-        self.__httpSession = aiohttp.ClientSession()
+        self.__http_session = aiohttp.ClientSession()
 
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *excinfo):
-        await self.__httpSession.close()
+        await self.__http_session.close()
+        self.__broker.disconnect()
 
-    async def init(self):
+    async def initialize(self):
+        """Initializes the MirAIe API"""
+
         self.__user = await self.__login()
         self.__broker = MirAIeBroker()
 
-        self.__home = await self.__getHomeDetails()
-        self.__broker.setTopics(self.__topics)
-        self.__broker.init_broker(self.__home.id, self.__user.accessToken)
+        self.__home = await self.__get_home_details()
+        self.__broker.set_topics(self.__topics)
+        self.__broker.init_broker(self.__home.home_id, self.__user.access_token)
         self.__broker.connect()
 
         return self.__home
 
-    async def getNewToken(self):
+    async def reconnect_broker(self):
+        """Authenticates with MirAIe and reconnects to MQTT server with the new credentials"""
         self.__user = await self.__login()
-        # callback(self.__user.accessToken)
-        self.__broker.reconnect(self.__user.accessToken)
-
-    def getDevices(self):
-        if self.__home is not None:
-            return self.__home.devices.values()
-        return list[Device]
-
-    #################################################################################################################
-    #                                                                                                               #
-    #################################################################################################################
+        self.__broker.reconnect(self.__user.access_token)
 
     async def __login(self):
         data = {
-            "clientId": constants.httpClientId,
+            "clientId": constants.HTTP_CLIENT_ID,
             "password": self.__password,
-            "scope": self.__getScope(),
+            "scope": self.__get_scope(),
         }
 
-        data[self.__authType] = self.__loginId
-        response = await self.__httpSession.post(constants.loginUrl, json=data)
+        data[self.__auth_type] = self.__login_id
+        response = await self.__http_session.post(constants.LOGIN_URL, json=data)
 
         if response.status == 200:
             json = await response.json()
             return User(
-                accessToken=json["accessToken"],
-                refreshToken=json["refreshToken"],
-                userId=json["userId"],
-                expiresIn=json["expiresIn"],
+                access_token=json["accessToken"],
+                refresh_token=json["refreshToken"],
+                user_id=json["userId"],
+                expires_in=json["expiresIn"],
             )
 
-        raise Exception("Authentication failed")
+        raise AuthException("Authentication failed")
 
-    async def __getHomeDetails(self):
-        response = await self.__httpSession.get(
-            constants.homesUrl, headers=self.__buildHttpHeaders()
+    async def __get_home_details(self):
+        response = await self.__http_session.get(
+            constants.HOMES_URL, headers=self.__build_http_headers()
         )
         resp = await response.json()
-        return await self.__parseHomeDetails(resp[0])
+        return await self.__parse_home_details(resp[0])
 
-    async def __parseHomeDetails(self, jsonResponse):
+    async def __parse_home_details(self, json_response):
         devices: list[Device] = []
 
-        for space in jsonResponse["spaces"]:
+        for space in json_response["spaces"]:
             for device in space["devices"]:
-                deviceId = device["deviceId"]
+                device_id = device["deviceId"]
                 topic = str(device["topic"][0])
-                deviceDetails = await self.getDeviceDetails(deviceId)
-                deviceStatus = await self.getDeviceStatus(deviceId)
+                device_details = await self.__get_device_details(device_id)
+                device_status = await self.__get_device_status(device_id)
 
                 device = Device(
-                    id=deviceId,
+                    device_id=device_id,
                     name=str(device["deviceName"]).lower().replace(" ", "-"),
-                    friendlyName=device["deviceName"],
-                    controlTopic=f"{topic}/control",
-                    statusTopic=f"{topic}/status",
-                    connectionStatusTopic=f"{topic}/connectionStatus",
-                    modelName=deviceDetails["modelName"],
-                    macAddress=deviceDetails["macAddress"],
-                    category=deviceDetails["category"],
-                    brand=deviceDetails["brand"],
-                    firmwareVersion=deviceDetails["firmwareVersion"],
-                    serialNumber=deviceDetails["serialNumber"],
-                    modelNumber=deviceDetails["modelNumber"],
-                    productSerialNumber=deviceDetails["productSerialNumber"],
-                    status=deviceStatus,
+                    friendly_name=device["deviceName"],
+                    control_topic=f"{topic}/control",
+                    status_topic=f"{topic}/status",
+                    connection_status_topic=f"{topic}/connectionStatus",
+                    model_name=device_details["modelName"],
+                    mac_address=device_details["macAddress"],
+                    category=device_details["category"],
+                    brand=device_details["brand"],
+                    firmware_version=device_details["firmwareVersion"],
+                    serial_number=device_details["serialNumber"],
+                    model_number=device_details["modelNumber"],
+                    product_serial_number=device_details["productSerialNumber"],
+                    status=device_status,
                     broker=self.__broker,
                 )
-                self.__topics.append(device.statusTopic)
-                self.__topics.append(device.connectionStatusTopic)
+                self.__topics.append(device.status_topic)
+                self.__topics.append(device.connection_status_topic)
                 devices.append(device)
 
-        return Home(id=jsonResponse["homeId"], devices=devices)
+        return Home(home_id=json_response["homeId"], devices=devices)
 
-    async def getDeviceDetails(self, deviceId: str):
-        url = f"{constants.deviceDetailsUrl}/{deviceId}"
+    async def __get_device_details(self, device_id: str):
+        url = f"{constants.DEVICE_DETAILS_URL}/{device_id}"
 
-        response = await self.__httpSession.get(
+        response = await self.__http_session.get(
             url,
-            headers=self.__buildHttpHeaders(),
+            headers=self.__build_http_headers(),
         )
 
         json = await response.json()
         return json[0]
 
-    async def getDeviceStatus(self, deviceId: str):
+    async def __get_device_status(self, device_id: str):
         status: DeviceStatus
 
-        response = await self.__httpSession.get(
-            constants.statusUrl.replace("{deviceId}", deviceId),
-            headers=self.__buildHttpHeaders(),
+        response = await self.__http_session.get(
+            constants.STATUS_URL.replace("{deviceId}", device_id),
+            headers=self.__build_http_headers(),
         )
 
         json = await response.json()
         status = DeviceStatus(
-            isOnline=json["onlineStatus"] == "true",
-            temperature=toFloat(json["actmp"]),
-            roomTemp=toFloat(json["rmtmp"]),
-            powerMode=PowerMode(json["ps"]),
-            fanMode=FanMode(json["acfs"]),
-            swingMode=SwingMode(json["acvs"]),
-            displayState=DisplayState(json["acdc"]),
-            hvacMode=HVACMode(json["acmd"]),
-            presetMode=PresetMode.BOOST
+            is_online=json["onlineStatus"] == "true",
+            temperature=to_float(json["actmp"]),
+            room_temp=to_float(json["rmtmp"]),
+            power_mode=PowerMode(json["ps"]),
+            fan_mode=FanMode(json["acfs"]),
+            swing_mode=SwingMode(json["acvs"]),
+            display_state=DisplayState(json["acdc"]),
+            hvac_mode=HVACMode(json["acmd"]),
+            preset_mode=PresetMode.BOOST
             if json["acpm"] == "on"
             else PresetMode.ECO
             if json["acem"] == "on"
@@ -166,12 +164,12 @@ class MirAIeAPI:
 
         return status
 
-    def __buildHttpHeaders(self):
+    def __build_http_headers(self):
         return {
-            "Authorization": f"Bearer {self.__user.accessToken}"
-            #,"Content-Type": "application/json",
+            "Authorization": f"Bearer {self.__user.access_token}"
+            ,"Content-Type": "application/json",
         }
 
-    def __getScope(self):
+    def __get_scope(self):
         rnd = math.floor(random.random() * 1000000000)
         return f"an{str(rnd)}"

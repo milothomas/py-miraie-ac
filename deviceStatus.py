@@ -1,25 +1,27 @@
+"""Represents the status of a device"""
 from enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
 
 
 class DeviceStatus:
+    """The Device Status class"""
     def __init__(
         self,
-        isOnline: bool,
+        is_online: bool,
         temperature: float,
-        roomTemp: float,
-        powerMode: PowerMode,
-        fanMode: FanMode,
-        swingMode: SwingMode,
-        displayState: DisplayState,
-        hvacMode: HVACMode,
-        presetMode: PresetMode,
+        room_temp: float,
+        power_mode: PowerMode,
+        fan_mode: FanMode,
+        swing_mode: SwingMode,
+        display_state: DisplayState,
+        hvac_mode: HVACMode,
+        preset_mode: PresetMode,
     ):
-        self.isOnline = isOnline
+        self.is_online = is_online
         self.temperature = temperature
-        self.roomTemp = roomTemp
-        self.powerMode = powerMode
-        self.fanMode = fanMode
-        self.swingMode = swingMode
-        self.displayState = displayState
-        self.hvacMode = hvacMode
-        self.presetMode = presetMode
+        self.room_temp = room_temp
+        self.power_mode = power_mode
+        self.fan_mode = fan_mode
+        self.swing_mode = swing_mode
+        self.display_state = display_state
+        self.hvac_mode = hvac_mode
+        self.preset_mode = preset_mode
