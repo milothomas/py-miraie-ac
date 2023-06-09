@@ -17,7 +17,8 @@ class MirAIeBroker:
     __password: str
     __topics: list[str] = []
     __callbacks: dict[str, list[callable]] = {}
-
+    __client: paho.Client
+    
     def init_broker(self, username: str, password: str):
         """Initializes the MQTT client"""
         self.__username = username
