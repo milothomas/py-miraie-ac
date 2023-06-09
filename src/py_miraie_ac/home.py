@@ -1,5 +1,5 @@
 """Represents a home"""
-from device import Device
+from py_miraie_ac.device import Device
 
 class Home:
     """The Home class"""

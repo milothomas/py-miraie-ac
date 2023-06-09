@@ -6,8 +6,7 @@ import random
 import ssl
 from paho.mqtt import client as paho
 
-from enums import FanMode, HVACMode, PowerMode, PresetMode, SwingMode
-
+from py_miraie_ac.enums import FanMode, HVACMode, PowerMode, PresetMode, SwingMode
 
 class MirAIeBroker:
     """The MirAIe Broker class"""

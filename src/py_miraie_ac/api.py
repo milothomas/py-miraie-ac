@@ -3,11 +3,11 @@
 import math
 import random
 import aiohttp
-from broker import MirAIeBroker
-import constants
-from device import Device
-from deviceStatus import DeviceStatus
-from enums import (
+from py_miraie_ac.constants import DEVICE_DETAILS_URL, HOMES_URL,HTTP_CLIENT_ID,LOGIN_URL,STATUS_URL
+from py_miraie_ac.broker import MirAIeBroker
+from py_miraie_ac.device import Device
+from py_miraie_ac.deviceStatus import DeviceStatus
+from py_miraie_ac.enums import (
     AuthType,
     DisplayState,
     FanMode,
@@ -16,11 +16,10 @@ from enums import (
     PresetMode,
     SwingMode,
 )
-from exceptions import AuthException
-from home import Home
-from user import User
-from utils import to_float
-
+from py_miraie_ac.exceptions import AuthException
+from py_miraie_ac.home import Home
+from py_miraie_ac.user import User
+from py_miraie_ac.utils import to_float
 
 class MirAIeAPI:
     """The MirAIe API class"""
@@ -66,13 +65,13 @@ class MirAIeAPI:
 
     async def __login(self):
         data = {
-            "clientId": constants.HTTP_CLIENT_ID,
+            "clientId": HTTP_CLIENT_ID,
             "password": self.__password,
             "scope": self.__get_scope(),
         }
 
         data[self.__auth_type] = self.__login_id
-        response = await self.__http_session.post(constants.LOGIN_URL, json=data)
+        response = await self.__http_session.post(LOGIN_URL, json=data)
 
         if response.status == 200:
             json = await response.json()
@@ -87,7 +86,7 @@ class MirAIeAPI:
 
     async def __get_home_details(self):
         response = await self.__http_session.get(
-            constants.HOMES_URL, headers=self.__build_http_headers()
+            HOMES_URL, headers=self.__build_http_headers()
         )
         resp = await response.json()
         return await self.__parse_home_details(resp[0])
@@ -127,7 +126,7 @@ class MirAIeAPI:
         return Home(home_id=json_response["homeId"], devices=devices)
 
     async def __get_device_details(self, device_id: str):
-        url = f"{constants.DEVICE_DETAILS_URL}/{device_id}"
+        url = f"{DEVICE_DETAILS_URL}/{device_id}"
 
         response = await self.__http_session.get(
             url,
@@ -141,7 +140,7 @@ class MirAIeAPI:
         status: DeviceStatus
 
         response = await self.__http_session.get(
-            constants.STATUS_URL.replace("{deviceId}", device_id),
+            STATUS_URL.replace("{deviceId}", device_id),
             headers=self.__build_http_headers(),
         )
 

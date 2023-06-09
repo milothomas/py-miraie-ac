@@ -1,11 +1,9 @@
 """The MirAIe device"""
 from typing import Callable
-from broker import MirAIeBroker
-from deviceStatus import DeviceStatus
-from enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
-from utils import to_float
-
-
+from py_miraie_ac.broker import MirAIeBroker
+from py_miraie_ac.deviceStatus import DeviceStatus
+from py_miraie_ac.enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
+from py_miraie_ac.utils import to_float
 
 class Device:
     """The MirAIe device class"""
