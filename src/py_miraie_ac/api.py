@@ -32,6 +32,11 @@ class MirAIeAPI:
     __topics: list[str] = []
     __broker: MirAIeBroker
 
+    @property
+    def devices(self) -> list[Device]:
+        """Returns a list of available devices."""
+        return list(self.__home.devices.values())
+
     def __init__(self, auth_type: AuthType, login_id: str, password: str):
         self.__auth_type = str(auth_type.value)
         self.__login_id = login_id
@@ -55,8 +60,6 @@ class MirAIeAPI:
         self.__broker.set_topics(self.__topics)
         self.__broker.init_broker(self.__home.home_id, self.__user.access_token)
         self.__broker.connect()
-
-        return self.__home
 
     async def reconnect_broker(self):
         """Authenticates with MirAIe and reconnects to MQTT server with the new credentials"""
@@ -95,6 +98,7 @@ class MirAIeAPI:
         devices: list[Device] = []
 
         for space in json_response["spaces"]:
+            space_name = space["spaceName"]
             for device in space["devices"]:
                 device_id = device["deviceId"]
                 topic = str(device["topic"][0])
@@ -118,7 +122,9 @@ class MirAIeAPI:
                     product_serial_number=device_details["productSerialNumber"],
                     status=device_status,
                     broker=self.__broker,
+                    area_name=space_name,
                 )
+
                 self.__topics.append(device.status_topic)
                 self.__topics.append(device.connection_status_topic)
                 devices.append(device)

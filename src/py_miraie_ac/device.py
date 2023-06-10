@@ -10,6 +10,7 @@ class Device:
 
     __broker: MirAIeBroker
 
+
     def __init__(
         self,
         device_id: str,
@@ -28,6 +29,7 @@ class Device:
         product_serial_number: str,
         status: DeviceStatus,
         broker: MirAIeBroker,
+        area_name: str
     ):
         self.device_id = device_id
         self.name = name
@@ -44,6 +46,7 @@ class Device:
         self.model_number = model_number
         self.product_serial_number = product_serial_number
         self.status = status
+        self.area_name = area_name
 
         self.__broker = broker
         self.__callbacks = set()
