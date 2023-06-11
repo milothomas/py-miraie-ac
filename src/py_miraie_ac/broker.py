@@ -57,7 +57,7 @@ class MirAIeBroker:
 
     def set_temperature(self, topic: str, value: float):
         """Sets the Temperature to the given value"""
-        message = self.__build_temp_essage(value)
+        message = self.__build_temp_message(value)
         self.__client.publish(topic, message)
 
     def set_power(self, topic: str, value: PowerMode):
@@ -139,7 +139,7 @@ class MirAIeBroker:
         message["ps"] = str(mode.value)
         return json.dumps(message)
 
-    def __build_temp_essage(self, temp: float):
+    def __build_temp_message(self, temp: float):
         message = self.__build_base_message()
         message["actmp"] = str(temp)
         return json.dumps(message)
