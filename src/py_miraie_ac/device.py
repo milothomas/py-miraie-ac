@@ -76,7 +76,6 @@ class Device:
             room_temp=to_float(json["rmtmp"]),
             power_mode=PowerMode(json["ps"]),
             fan_mode=FanMode(json["acfs"]),
-            swing_mode=SwingMode(json["acvs"]),
             display_state=DisplayState(json["acdc"]),
             hvac_mode=HVACMode(json["acmd"]),
             preset_mode=PresetMode.BOOST
@@ -84,6 +83,8 @@ class Device:
             else PresetMode.ECO
             if json["acem"] == "on"
             else PresetMode.NONE,
+            vertical_swing_mode=SwingMode(json["acvs"]),
+            horizontal_swing_mode=SwingMode(json["achs"]),
         )
 
         return device_status
@@ -119,9 +120,13 @@ class Device:
         """Sets the preset mode"""
         self.__broker.set_preset_mode(self.control_topic, mode)
 
-    def set_swing_mode(self, mode: SwingMode):
+    def set_vertical_swing_mode(self, mode: SwingMode):
         """Sets the swing mode"""
-        self.__broker.set_swing_mode(self.control_topic, mode)
+        self.__broker.set_vertical_swing_mode(self.control_topic, mode)
+
+    def set_horizontal_swing_mode(self, mode: SwingMode):
+        """Sets the swing mode"""
+        self.__broker.set_horizontal_swing_mode(self.control_topic, mode)
 
     def register_callback(self, callback: Callable[[], None]) -> None:
         """Registers a callback function"""

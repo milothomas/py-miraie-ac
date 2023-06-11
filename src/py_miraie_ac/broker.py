@@ -80,9 +80,14 @@ class MirAIeBroker:
         message = self.__build_preset_mode_message(value)
         self.__client.publish(topic, message)
 
-    def set_swing_mode(self, topic: str, value: SwingMode):
-        """Sets the Swing to the given value"""
-        message = self.__build_swing_mode_message(value)
+    def set_vertical_swing_mode(self, topic: str, value: SwingMode):
+        """Sets the Vertical Swing to the given value"""
+        message = self.__build_vertical_swing_mode_message(value)
+        self.__client.publish(topic, message)
+    
+    def set_horizontal_swing_mode(self, topic: str, value: SwingMode):
+        """Sets the Horizontal Swing to the given value"""
+        message = self.__build_horizontal_swing_mode_message(value)
         self.__client.publish(topic, message)
 
     def __generate_client_id(self):
@@ -164,9 +169,14 @@ class MirAIeBroker:
             message["acpm"] = "on"
         return json.dumps(message)
 
-    def __build_swing_mode_message(self, mode: SwingMode):
+    def __build_vertical_swing_mode_message(self, mode: SwingMode):
         message = self.__build_base_message()
         message["acvs"] = mode.value
+        return json.dumps(message)
+    
+    def __build_horizontal_swing_mode_message(self, mode: SwingMode):
+        message = self.__build_base_message()
+        message["achs"] = mode.value
         return json.dumps(message)
 
     def __build_base_message(self):

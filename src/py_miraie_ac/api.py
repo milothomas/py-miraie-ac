@@ -157,7 +157,6 @@ class MirAIeAPI:
             room_temp=to_float(json["rmtmp"]),
             power_mode=PowerMode(json["ps"]),
             fan_mode=FanMode(json["acfs"]),
-            swing_mode=SwingMode(json["acvs"]),
             display_state=DisplayState(json["acdc"]),
             hvac_mode=HVACMode(json["acmd"]),
             preset_mode=PresetMode.BOOST
@@ -165,6 +164,8 @@ class MirAIeAPI:
             else PresetMode.ECO
             if json["acem"] == "on"
             else PresetMode.NONE,
+            vertical_swing_mode=SwingMode(json["acvs"]),
+            horizontal_swing_mode=SwingMode(json["achs"]),
         )
 
         return status
