@@ -4,8 +4,8 @@ import json
 import math
 import random
 import ssl
+from typing import Callable
 from paho.mqtt import client as paho
-
 from py_miraie_ac.enums import FanMode, HVACMode, PowerMode, PresetMode, SwingMode
 
 class MirAIeBroker:
@@ -13,12 +13,13 @@ class MirAIeBroker:
 
     __host: str = "mqtt.miraie.in"
     __port: int = 8883
+    __useSsl: bool = True
     __username: str
     __password: str
     __topics: list[str] = []
-    __callbacks: dict[str, list[callable]] = {}
+    __callbacks: dict[str, list[Callable]] = {}
     __client: paho.Client
-    
+
     def init_broker(self, username: str, password: str):
         """Initializes the MQTT client"""
         self.__username = username
@@ -29,7 +30,7 @@ class MirAIeBroker:
         """Sets the topics to subscribe to"""
         self.__topics = topics
 
-    def register_callback(self, topic: str, callback):
+    def register_callback(self, topic: str, callback: Callable):
         """Registers callbacks for a given topic"""
         self.__callbacks[topic] = callback
 
@@ -84,7 +85,7 @@ class MirAIeBroker:
         """Sets the Vertical Swing to the given value"""
         message = self.__build_vertical_swing_mode_message(value)
         self.__client.publish(topic, message)
-    
+
     def set_horizontal_swing_mode(self, topic: str, value: SwingMode):
         """Sets the Horizontal Swing to the given value"""
         message = self.__build_horizontal_swing_mode_message(value)
@@ -111,16 +112,9 @@ class MirAIeBroker:
         )
         self.__client.on_connect = self.__on_mqtt_connected
         self.__client.on_message = self.__on_mqtt_message_received
-        self.__client.on_disconnect = self.__on_mqtt_disconnected
-        self.__client.on_log = self.__on_mqtt_log
-        self.__client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_REQUIRED)
 
-    def __on_mqtt_log(self, client, userdata, level, buff):
-        print("==========")
-        print("MQTT LOG:", buff)
-        print("level:", level)
-        print("userData", userdata)
-        print("==========")
+        if self.__useSsl:
+            self.__client.tls_set(certfile=None, keyfile=None, cert_reqs=ssl.CERT_REQUIRED)
 
     def __on_mqtt_connected(self, client: paho.Client, user_data, flags, rc):
         for topic in self.__topics:
@@ -130,9 +124,6 @@ class MirAIeBroker:
         parsed = json.loads(message.payload.decode("utf-8"))
         callback_func = self.__callbacks.get(message.topic)
         callback_func(parsed)
-
-    def __on_mqtt_disconnected(self, client: paho.Client, user_data, rc):
-        print("mqtt disconnected")
 
     def __build_power_message(self, mode: PowerMode):
         message = self.__build_base_message()
@@ -173,7 +164,7 @@ class MirAIeBroker:
         message = self.__build_base_message()
         message["acvs"] = mode.value
         return json.dumps(message)
-    
+
     def __build_horizontal_swing_mode_message(self, mode: SwingMode):
         message = self.__build_base_message()
         message["achs"] = mode.value

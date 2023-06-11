@@ -1,4 +1,5 @@
 """The MirAIe device"""
+from __future__ import annotations
 from typing import Callable
 from py_miraie_ac.broker import MirAIeBroker
 from py_miraie_ac.deviceStatus import DeviceStatus
@@ -9,7 +10,7 @@ class Device:
     """The MirAIe device class"""
 
     __broker: MirAIeBroker
-
+    __callbacks: list[Callable]
 
     def __init__(
         self,
@@ -49,7 +50,7 @@ class Device:
         self.area_name = area_name
 
         self.__broker = broker
-        self.__callbacks = set()
+        self.__callbacks = []
         self.__broker.register_callback(self.status_topic, self.status_callback_handler)
         self.__broker.register_callback(
             self.connection_status_topic, self.connection_callback_handler
@@ -130,8 +131,8 @@ class Device:
 
     def register_callback(self, callback: Callable[[], None]) -> None:
         """Registers a callback function"""
-        self.__callbacks.add(callback)
+        self.__callbacks.append(callback)
 
     def remove_callback(self, callback: Callable[[], None]) -> None:
         """Removes a callback function"""
-        self.__callbacks.discard(callback)
+        self.__callbacks.remove(callback)
