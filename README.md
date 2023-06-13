@@ -11,12 +11,18 @@ pip install py-miraie-ac
 ```
 import asyncio
 from api import MirAIeAPI
-from enums import AuthType, SwingMode
+from enums import AuthType
 from device import Device
 
-async with MirAIeAPI(auth_type=AuthType.MOBILE, login_id=mobile_number, password=password) as api:
-        home:Home = await api.initialize()
-        for deviceId, device in home.devices.items():
-            print("Found device: ", device.friendly_name)
-            officeAc.set_temperature(24)
-            officeAc.turnOn()
+async with MirAIeAPI(
+        auth_type=AuthType.MOBILE, 
+        login_id="YOUR_MOBILE_NUMBER", 
+        password="YOUR_PASSWORD"
+    ) as api:
+    await api.initialize()
+    for device in api.devices:
+        print("Found device: ", device.friendly_name)
+        device.set_temperature(24)
+        device.turn_on()
+
+asyncio.get_event_loop().run_until_complete(start())
