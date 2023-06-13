@@ -2,10 +2,11 @@
 
 import math
 import random
+import asyncio
 import aiohttp
-from py_miraie_ac.constants import DEVICE_DETAILS_URL, HOMES_URL,HTTP_CLIENT_ID,LOGIN_URL,STATUS_URL
 from py_miraie_ac.broker import MirAIeBroker
 from py_miraie_ac.device import Device
+from py_miraie_ac.constants import DEVICE_DETAILS_URL, HOMES_URL,HTTP_CLIENT_ID,LOGIN_URL,STATUS_URL
 from py_miraie_ac.deviceStatus import DeviceStatus
 from py_miraie_ac.enums import (
     AuthType,
@@ -58,13 +59,16 @@ class MirAIeAPI:
 
         self.__home = await self.__get_home_details()
         self.__broker.set_topics(self.__topics)
-        self.__broker.init_broker(self.__home.home_id, self.__user.access_token)
+        self.__broker.init_broker(self.__home.home_id, self.__user.access_token, self.reconnect_broker)
         self.__broker.connect()
 
-    async def reconnect_broker(self):
+    def reconnect_broker(self, reconnect_callback: callable):
         """Authenticates with MirAIe and reconnects to MQTT server with the new credentials"""
-        self.__user = await self.__login()
-        self.__broker.reconnect(self.__user.access_token)
+        loop = self.__http_session.loop
+        fut = asyncio.run_coroutine_threadsafe(self.__login(), loop)
+
+        self.__user = fut.result()
+        reconnect_callback(self.__home.home_id, self.__user.access_token)
 
     async def __login(self):
         data = {

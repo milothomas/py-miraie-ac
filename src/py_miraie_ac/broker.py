@@ -19,11 +19,13 @@ class MirAIeBroker:
     __topics: list[str] = []
     __callbacks: dict[str, list[Callable]] = {}
     __client: paho.Client
+    __get_access_token_callback: Callable
 
-    def init_broker(self, username: str, password: str):
+    def init_broker(self, username: str, password: str, get_access_token_callback: Callable):
         """Initializes the MQTT client"""
         self.__username = username
         self.__password = password
+        self.__get_access_token_callback = get_access_token_callback
         self.__init_mqtt_client()
 
     def set_topics(self, topics: list[str]):
@@ -111,6 +113,7 @@ class MirAIeBroker:
             username=self.__username, password=self.__password
         )
         self.__client.on_connect = self.__on_mqtt_connected
+        self.__client.on_disconnect = self.__on_mqtt_disconnected
         self.__client.on_message = self.__on_mqtt_message_received
 
         if self.__useSsl:
@@ -119,6 +122,14 @@ class MirAIeBroker:
     def __on_mqtt_connected(self, client: paho.Client, user_data, flags, rc):
         for topic in self.__topics:
             client.subscribe(topic, qos=1)
+
+    def __on_mqtt_disconnected(self, client: paho.Client, user_data, rc):
+        def callback(username: str, password: str):
+            self.__client.username_pw_set(username, password)
+            self.__client.reconnect()
+
+        if rc != 0:
+            self.__get_access_token_callback(callback)
 
     def __on_mqtt_message_received(self, client: paho.Client, user_data, message):
         parsed = json.loads(message.payload.decode("utf-8"))
