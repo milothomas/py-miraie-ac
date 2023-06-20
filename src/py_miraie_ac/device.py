@@ -1,16 +1,16 @@
 """The MirAIe device"""
 from __future__ import annotations
 from typing import Callable
-from py_miraie_ac.broker import MirAIeBroker
-from py_miraie_ac.deviceStatus import DeviceStatus
-from py_miraie_ac.enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
-from py_miraie_ac.utils import to_float
+from .broker import MirAIeBroker
+from .deviceStatus import DeviceStatus
+from .enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
+from .utils import to_float
 
 class Device:
     """The MirAIe device class"""
 
-    __broker: MirAIeBroker
-    __callbacks: list[Callable]
+    _broker: MirAIeBroker
+    _callbacks: list[Callable]
 
     def __init__(
         self,
@@ -49,24 +49,24 @@ class Device:
         self.status = status
         self.area_name = area_name
 
-        self.__broker = broker
-        self.__callbacks = []
-        self.__broker.register_callback(self.status_topic, self.status_callback_handler)
-        self.__broker.register_callback(
+        self._broker = broker
+        self._callbacks = []
+        self._broker.register_callback(self.status_topic, self.status_callback_handler)
+        self._broker.register_callback(
             self.connection_status_topic, self.connection_callback_handler
         )
 
-    def __publish_state(self):
-        for callback in self.__callbacks:
+    def _publish_state(self):
+        for callback in self._callbacks:
             callback()
 
     def status_callback_handler(self, status: dict):
         """Handles MQTT messages received on the status topic"""
 
-        self.status = self.__parse_status_response(status)
-        self.__publish_state()
+        self.status = self._parse_status_response(status)
+        self._publish_state()
 
-    def __parse_status_response(self, json: dict) -> DeviceStatus:
+    def _parse_status_response(self, json: dict) -> DeviceStatus:
         is_online = self.status.is_online
         if "onlineStatus" in json:
             is_online = json["onlineStatus"] == "true"
@@ -95,44 +95,44 @@ class Device:
 
         if "onlineStatus" in status:
             self.status.is_online = status["onlineStatus"] == "true"
-            self.__publish_state()
+            self._publish_state()
 
     def set_temperature(self, temp: float):
         """Sets the temperature"""
-        self.__broker.set_temperature(self.control_topic, temp)
+        self._broker.set_temperature(self.control_topic, temp)
 
     def turn_on(self):
         """Turns on the devie"""
-        self.__broker.set_power(self.control_topic, PowerMode.ON)
+        self._broker.set_power(self.control_topic, PowerMode.ON)
 
     def turn_off(self):
         """Turns off the device"""
-        self.__broker.set_power(self.control_topic, PowerMode.OFF)
+        self._broker.set_power(self.control_topic, PowerMode.OFF)
 
     def set_hvac_mode(self, mode: HVACMode):
         """Sets the HVAC mode"""
-        self.__broker.set_hvac_mode(self.control_topic, mode)
+        self._broker.set_hvac_mode(self.control_topic, mode)
 
     def set_fan_mode(self, mode: FanMode):
         """Sets the fan mode"""
-        self.__broker.set_fan_mode(self.control_topic, mode)
+        self._broker.set_fan_mode(self.control_topic, mode)
 
     def set_preset_mode(self, mode: PresetMode):
         """Sets the preset mode"""
-        self.__broker.set_preset_mode(self.control_topic, mode)
+        self._broker.set_preset_mode(self.control_topic, mode)
 
     def set_vertical_swing_mode(self, mode: SwingMode):
         """Sets the swing mode"""
-        self.__broker.set_vertical_swing_mode(self.control_topic, mode)
+        self._broker.set_vertical_swing_mode(self.control_topic, mode)
 
     def set_horizontal_swing_mode(self, mode: SwingMode):
         """Sets the swing mode"""
-        self.__broker.set_horizontal_swing_mode(self.control_topic, mode)
+        self._broker.set_horizontal_swing_mode(self.control_topic, mode)
 
     def register_callback(self, callback: Callable[[], None]) -> None:
         """Registers a callback function"""
-        self.__callbacks.append(callback)
+        self._callbacks.append(callback)
 
     def remove_callback(self, callback: Callable[[], None]) -> None:
         """Removes a callback function"""
-        self.__callbacks.remove(callback)
+        self._callbacks.remove(callback)

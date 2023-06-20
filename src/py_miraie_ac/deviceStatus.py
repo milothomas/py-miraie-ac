@@ -1,5 +1,5 @@
 """Represents the status of a device"""
-from py_miraie_ac.enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
+from .enums import DisplayState, FanMode, HVACMode, PowerMode, PresetMode, SwingMode
 
 class DeviceStatus:
     """The Device Status class"""
