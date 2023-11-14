@@ -1,4 +1,22 @@
 {
     "python.formatting.provider": "black",
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "workbench.colorCustomizations": {
+        "editorStickyScroll.background": "#023E8A",
+        "editorStickyScrollHover.background": "#0077B6",
+        "activityBar.background": "#183A50",
+        "activityBar.foreground": "#BB616C",
+        "activityBar.inactiveForeground": "#8e8e8e",
+        "activityBar.activeBorder": "#e7c5af",
+        "activityBar.activeBackground": "#89ACAA",
+        "activityBar.border": "#89ACAA",
+        "titleBar.activeBackground": "#183A50",
+        "titleBar.activeForeground": "#BB616C",
+        "titleBar.inactiveBackground": "#253743",
+        "titleBar.inactiveForeground": "#8e8e8e",
+        "titleBar.border": "#89ACAA",
+        "statusBar.background": "#183A50",
+        "statusBar.foreground": "#BB616C",
+        "statusBar.border": "#89ACAA"
+    }
 }

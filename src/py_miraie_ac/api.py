@@ -111,6 +111,10 @@ class MirAIeAPI:
                 device_id = device["deviceId"]
                 topic = str(device["topic"][0])
                 device_details = await self._get_device_details(device_id)
+
+                category = str(device_details["category"]).lower()
+                if category != "ac": continue
+
                 device_status = await self._get_device_status(device_id)
 
                 device = Device(
